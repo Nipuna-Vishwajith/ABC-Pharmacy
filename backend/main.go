@@ -2,7 +2,7 @@
 package main
 
 import (
-	"fmt"
+	
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
@@ -76,19 +76,33 @@ func updateDrug(c *gin.Context) {
 	id := c.Params.ByName("id")
 	var drug Drug
 	if err := db.Where("id = ?", id).First(&drug).Error; err != nil {
-		c.AbortWithStatus(404)
-		return
+	  c.AbortWithStatus(404)
+	  return
 	}
-	c.BindJSON(&drug)
+  
+	// Bind the updated data from the request body
+	if err := c.BindJSON(&drug); err != nil {
+	  c.JSON(400, gin.H{"error": err.Error()})
+	  return
+	}
+  
+	// Save the updated drug to the database
 	db.Save(&drug)
+  
 	c.JSON(200, drug)
-}
+  }
 
 // Delete a drug
 func deleteDrug(c *gin.Context) {
 	id := c.Params.ByName("id")
 	var drug Drug
-	d := db.Where("id = ?", id).Delete(&drug)
-	fmt.Println(d)
-	c.JSON(200, gin.H{"id #" + id: "deleted"})
-}
+	if err := db.Where("id = ?", id).First(&drug).Error; err != nil {
+	  c.AbortWithStatus(404)
+	  return
+	}
+  
+	// Delete the drug from the database
+	db.Delete(&drug)
+  
+	c.JSON(200, gin.H{"id": id, "message": "deleted"})
+  }
